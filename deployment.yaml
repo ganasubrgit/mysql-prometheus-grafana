@@ -59,6 +59,31 @@ spec:
 
 ---
 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqld-exporter-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    ---
+    datasources:
+      - name: mysql
+        type: mysql
+        host: mysql
+        port: 3306
+        username: root
+        password: password
+        timeout: 5s
+        tls:
+          enabled: false
+    metrics:
+      - name: mysql_status
+        query: SHOW GLOBAL STATUS
+      - name: mysql_variables
+        query: SHOW GLOBAL VARIABLES
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -75,13 +100,19 @@ spec:
         app: mysql-exporter
     spec:
       containers:
-        - name: mysql-exporter
-          image: prom/mysqld-exporter:latest
-          env:
-            - name: DATA_SOURCE_NAME
-              value: "root:password@mysql:3306"
+        - name: mysqld-exporter
+          image: prom/mysqld-exporter:v0.14.0
           ports:
             - containerPort: 9104
+          args:
+            - "--config.my-cnf=/etc/config/config.yaml"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: mysqld-exporter-config
 
 ---
 
