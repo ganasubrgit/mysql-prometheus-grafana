@@ -19,6 +19,23 @@ spec:
 
 ---
 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: monitoring
+data:
+  # MySQL Configuration options
+  my.cnf: |
+    [mysqld]
+    server-id=1
+    log_bin=mysql-bin
+    binlog_format=row
+    expire_logs_days=7
+    max_binlog_size=100M
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,6 +59,17 @@ spec:
               value: password
           ports:
             - containerPort: 3306
+          volumeMounts:
+            - name: mysql-config-volume
+              mountPath: /etc/mysql/conf.d
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+      volumes:
+        - name: mysql-config-volume
+          configMap:
+            name: mysql-config
 
 ---
 
@@ -66,22 +94,11 @@ metadata:
   namespace: monitoring
 data:
   config.yaml: |
-    ---
-    datasources:
-      - name: mysql
-        type: mysql
-        host: mysql
-        port: 3306
-        username: root
-        password: password
-        timeout: 5s
-        tls:
-          enabled: false
-    metrics:
-      - name: mysql_status
-        query: SHOW GLOBAL STATUS
-      - name: mysql_variables
-        query: SHOW GLOBAL VARIABLES
+    [client]
+    user = root
+    password = password
+    host = mysql
+    
 ---
 
 apiVersion: apps/v1
