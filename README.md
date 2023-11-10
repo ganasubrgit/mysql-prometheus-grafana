@@ -17,3 +17,5 @@
 #### Port forward for grafana your local laptop/desktop
   - kubectl port-forward <pod name> -n monitoring 3000:3000
   - http://localhost:3000/
+
+Login to Grafana using the default username and password, then import the dashboard using the JSON file in this repo.
