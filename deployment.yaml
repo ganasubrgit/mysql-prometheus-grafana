@@ -31,7 +31,6 @@ data:
     server-id=1
     log_bin=mysql-bin
     binlog_format=row
-    expire_logs_days=7
     max_binlog_size=100M
 
 ---
@@ -53,7 +52,7 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: mysql:latest
+          image: mysql:8.2.0
           env:
             - name: MYSQL_ROOT_PASSWORD
               value: password
