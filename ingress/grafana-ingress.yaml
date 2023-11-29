@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2 # For Grafana version 10, remove the rewrite
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: grafana
+    http:
+      paths:
+      - backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+        path: /grafana(/|$)(.*) # For Grafana version 10, set it as /grafana
+        pathType: Prefix

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-otel
+  namespace: monitoring
+spec:
+  selector:
+    app: python-otel
+  ports:
+  - protocol: "TCP"
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-otel
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: python-otel
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: python-otel
+    spec:
+      containers:
+      - name: python-otel
+        image: ghcr.io/ganasubrgit/python-otle-helloworld:1.0
+        # imagePullPolicy: Never
+        ports:
+        - containerPort: 8080

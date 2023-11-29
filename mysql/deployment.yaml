@@ -1,0 +1,126 @@
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: monitoring
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: monitoring
+data:
+  # MySQL Configuration options
+  my.cnf: |
+    [mysqld]
+    server-id=1
+    log_bin=mysql-bin
+    binlog_format=row
+    max_binlog_size=100M
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.2.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: password
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-config-volume
+              mountPath: /etc/mysql/conf.d
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+      volumes:
+        - name: mysql-config-volume
+          configMap:
+            name: mysql-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: mysql-exporter
+  ports:
+    - name: mysql-exporter
+      port: 9104
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqld-exporter-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    [client]
+    user = root
+    password = password
+    host = mysql
+    
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-exporter
+  template:
+    metadata:
+      labels:
+        app: mysql-exporter
+    spec:
+      containers:
+        - name: mysqld-exporter
+          image: prom/mysqld-exporter:v0.14.0
+          ports:
+            - containerPort: 9104
+          args:
+            - "--config.my-cnf=/etc/config/config.yaml"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: mysqld-exporter-config
